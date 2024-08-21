@@ -10,6 +10,9 @@ from idun_guardian_sdk import GuardianClient
 from psychopy import visual, sound, core, event as psychopy_event
 from pylsl import StreamInfo, StreamOutlet, StreamInlet, resolve_stream
 
+import tracemalloc
+tracemalloc.start()
+
 # Create Subject ID
 subj = "001"  # UPDATE WITH EACH PARTICIPANT
 
@@ -31,7 +34,7 @@ device_address = 'E5:1E:FD:F5:15:26'
 api_token = "idun_GAtJDPZJ1bbs47Mf4KEBA3-v35iudqE3NSGSLD3OE8zE8KN2CHcN809-"
 client = GuardianClient(address=device_address, api_token=api_token)
 MAINS_FREQUENCY_60Hz = True
-RECORDING_TIMER: int = 60 * 60 * 1  # 1 hour
+RECORDING_TIMER: int = (60 * 60 * 0.25)  # 15 min
 
 # # Create lists to store the data
 eeg_data = []
@@ -40,9 +43,15 @@ markers = []
 marker_timestamps = []
 
 
-def print_impedance(data):
+async def print_impedance(data):
     print(f"{data}\tOhm")
 
+async def start_recording():
+    await client.start_recording(recording_timer=RECORDING_TIMER)
+
+async def main():
+    # start recording in the background
+    recording_task = asyncio.create_task(start_recording())
 
 def collect_eeg_data(inlet, data_list, timestamp_list):
     while True:
@@ -76,10 +85,14 @@ if __name__ == "__main__":
             lsl_outlet.push_chunk(data, most_recent_ts)
 
 
-        client.subscribe_live_insights(raw_eeg=True, handler=lsl_stream_handler)
+        client.subscribe_live_insights(
+            raw_eeg=True, 
+            handler=lsl_stream_handler
+        )
 
         print("starting recording")
-        client.start_recording(recording_timer=RECORDING_TIMER)
+        asyncio.run(main())       
+        #asyncio.run(client.start_recording(recording_timer=RECORDING_TIMER))
         print("Recording has started")
 
        # asyncio.run(client.start_recording(recording_timer=RECORDING_TIMER))
