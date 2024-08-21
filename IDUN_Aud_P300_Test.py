@@ -48,29 +48,14 @@ if __name__ == "__main__":
         info = StreamInfo("IDUN", "EEG", 1, 250, "float32", client.address)
         lsl_outlet = StreamOutlet(info, 20, 360)
 
-        # Check battery level
-        try:
-            battery_level = asyncio.run(client.check_battery())
-            print("Battery Level: %s%%" % battery_level)
-        except asyncio.TimeoutError:
-            print("Timeout occurred while checking battery level.")
-        except Exception as e:
-            print(f"An error occurred: {e}")
-
-        # Stream impedance
-        try:
-            asyncio.run(client.stream_impedance(handler=print_impedance))
-        except Exception as e:
-            print(f"An error occurred while streaming impedance: {e}")
-
-        info = StreamInfo("IDUN", "EEG", 1, 250, "float32", client.address)
-        lsl_outlet = StreamOutlet(info, 20, 360)
-
         battery_level = asyncio.run(client.check_battery())
         print("Battery Level: %s%%" % battery_level)
-
-        client = GuardianClient(debug=True)
-        asyncio.run(client.stream_impedance(handler=print_impedance))
+    
+        try:
+            # Run the stream_impedance function, limiting it to 20 seconds
+            asyncio.wait_for(client.stream_impedance(handler=print_impedance), timeout=20.0)
+        except asyncio.TimeoutError:
+            print("Task took longer than 20 seconds and was cancelled.")
 
 
         def lsl_stream_handler(event):
