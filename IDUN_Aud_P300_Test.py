@@ -4,13 +4,23 @@
 import asyncio
 import numpy as np
 import random
+import os
 from threading import Thread
 from idun_guardian_sdk import GuardianClient
 from psychopy import visual, sound, core, event as psychopy_event
 from pylsl import StreamInfo, StreamOutlet, StreamInlet, resolve_stream
 
 # Create Subject ID
-subj = "001"
+subj = "001"  # UPDATE WITH EACH PARTICIPANT
+
+# Customize directory for file saving
+directory = 'C:/Users/Students/source/repos/IDUN_Test/'  #CHANGE DEPENDING ON COMPUTER
+subdir = os.path.join(directory, 'data')
+eeg_path = os.path.join(subdir, f'eeg_data_{subj}A.csv')
+timestamp_path = os.path.join(subdir, f'timestamps_{subj}A.csv')
+marker_path = os.path.join(subdir, f'markers_{subj}A.csv')
+marker_timestamps_path = os.path.join(subdir, f'marker_timestamps_{subj}A.csv')
+
 
 # Load the sound from the WAV file
 sound_440Hz = sound.Sound("440Hz_tone.wav")
@@ -66,12 +76,13 @@ if __name__ == "__main__":
             lsl_outlet.push_chunk(data, most_recent_ts)
 
 
-        client.subscribe_live_insights(
-            raw_eeg=True,
-            handler=lsl_stream_handler,
-        )
+        client.subscribe_live_insights(raw_eeg=True, handler=lsl_stream_handler)
 
-        asyncio.run(client.start_recording(recording_timer=RECORDING_TIMER))
+        print("starting recording")
+        client.start_recording(recording_timer=RECORDING_TIMER)
+        print("Recording has started")
+
+       # asyncio.run(client.start_recording(recording_timer=RECORDING_TIMER))
 
         # # Set up the LSL stream for markers
         info = StreamInfo('MarkerStream', 'Markers', 1, 2, 'int32', 'myuidw43536')
@@ -169,7 +180,7 @@ if __name__ == "__main__":
         marker_timestamps = np.array(marker_timestamps)  # Shape: (num_markers,)
 
         # Save the arrays as CSV files
-        np.savetxt(f'BCI4Kids/data/IDUN_Pilot/eeg_data_{subj}A.csv', eeg_data, delimiter=',')
-        np.savetxt(f'BCI4Kids/data/IDUN_Pilot/timestamps_{subj}A.csv', timestamps, delimiter=',')
-        np.savetxt(f'BCI4Kids/data/IDUN_Pilot/markers_{subj}A.csv', markers, delimiter=',')
-        np.savetxt(f'BCI4Kids/data/IDUN_Pilot/marker_timestamps_{subj}A.csv', marker_timestamps, delimiter=',')
+        np.savetxt(eeg_path, eeg_data, delimiter=',')
+        np.savetxt(timestamp_path, timestamps, delimiter=',')
+        np.savetxt(marker_path, markers, delimiter=',')
+        np.savetxt(marker_timestamps_path, marker_timestamps, delimiter=',')
