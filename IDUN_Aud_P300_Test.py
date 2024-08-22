@@ -26,7 +26,7 @@ sound_587Hz = sound.Sound("587Hz_tone.wav")
 
 # Initialize IDUN Guardian
 device_address = 'E5:1E:FD:F5:15:26'
-api_token = "idun_GAtJDPZJ1bbs47Mf4KEBA3-v35iudqE3NSGSLD3OE8zE8KN2CHcN809-"
+api_token = "XXXXXXX"
 client = GuardianClient(address=device_address, api_token=api_token)
 MAINS_FREQUENCY_60Hz = True
 RECORDING_TIMER: int = (60 * 60 * 0.25)  # 15 min
