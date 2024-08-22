@@ -34,7 +34,6 @@ async def read_battery_30s(client):             # Every 30 seconds give an updat
 
 
 async def run_experiment():
-    await asyncio.sleep(15)
     # Setup PsychoPy window
     win = visual.Window([800, 600], color='black')
     fixation = visual.TextStim(win, text='+', color='white', height=0.1)
@@ -46,30 +45,17 @@ async def run_experiment():
         block_text.draw()
         win.flip()
 
-       # Non-blocking key wait with asyncio loop
-        start_block = False
-        while not start_block:
-            keys = psychopy_event.getKeys()
+        # Wait for Enter key to start the block
+        while True:
+            keys = psychopy_event.waitKeys()
             if 'return' in keys:
-                start_block = True
+                break
             elif 'escape' in keys:
                 win.close()
                 core.quit()
 
-            await asyncio.sleep(0.01)  # Yield control to the asyncio event loop
-
-
-        # Wait for Enter key to start the block
-        #while True:
-        #     keys = psychopy_event.waitKeys()
-        #     if 'return' in keys:
-        #         break
-        #     elif 'escape' in keys:
-        #         win.close()
-        #         core.quit()
-
-        # fixation.draw()
-        # win.flip()
+        fixation.draw()
+        win.flip()
 
         # Block-specific task
         target_sound_count = 0
@@ -101,8 +87,6 @@ async def run_experiment():
 
             core.wait(0.75)
 
-            await asyncio.sleep(0.01)  # Yield control to the asyncio event loop
-
         print(f"Block {block + 1} completed")
 
     win.close()
@@ -113,7 +97,7 @@ async def collect_EEG(client):
 
 async def main():
     client = GuardianClient(api_token=my_api_token, address = my_address, debug=True)
-    
+
     info = StreamInfo("IDUN", "EEG", 1, 250, "float32", client.address)
     lsl_outlet = StreamOutlet(info, 20, 360)
 
@@ -129,18 +113,20 @@ async def main():
         handler=lsl_stream_handler,
     )
 
+    await asyncio.gather(
+        collect_EEG(client),
+        run_experiment(),
+        read_battery_30s(client),
+    )
+
+if __name__ == "__main__":
+    asyncio.run(main())
+
+
+## OLD ##
     #recording_task = asyncio.create_task(client.start_recording(recording_timer=RECORDING_TIMER))
     #battery_task = asyncio.create_task(read_battery_30s(client))
     #experiment_task = asyncio.create_task(run_experiment())
     #await recording_task
     #await stop_task(battery_task)
     #await stop_task(experiment_task)
-
-    await asyncio.gather(
-        collect_EEG(client),
-        #run_experiment(),
-        #read_battery_30s(client),
-    )
-
-if __name__ == "__main__":
-    asyncio.run(main())
