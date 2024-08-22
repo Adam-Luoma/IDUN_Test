@@ -3,19 +3,10 @@ from pylsl import StreamInfo, StreamOutlet
 
 from idun_guardian_sdk import GuardianClient
 
-from psychopy import visual, sound, core, event as psychopy_event
-import random
-
 #initialize IDUN System
-RECORDING_TIMER: int = (60 * 1)  # 60 sec * 1 min
+RECORDING_TIMER: int = (60 * 2)  # 60 sec * 1 min
 my_api_token = "idun_GAtJDPZJ1bbs47Mf4KEBA3-v35iudqE3NSGSLD3OE8zE8KN2CHcN809-"
 my_address = "E5-1E-FD-F5-15-26"
-
-#initialize PsycoPy experiment parameters
-sound_440Hz = sound.Sound("440Hz_tone.wav")
-sound_587Hz = sound.Sound("587Hz_tone.wav")
-num_blocks = 1                      #UPDATE to alter data collection length
-target_sound_count_per_block = 2
 
 
 async def stop_task(task):
@@ -31,69 +22,12 @@ async def read_battery_30s(client):             # Every 30 seconds give an updat
         battery = await client.check_battery()
         print("Battery Level: %s%%" % battery)
         await asyncio.sleep(30)
+   
 
-
-async def run_experiment():
-    # Setup PsychoPy window
-    win = visual.Window([800, 600], color='black')
-    fixation = visual.TextStim(win, text='+', color='white', height=0.1)
-    block_text = visual.TextStim(win, text='', color='white', height=0.1, pos=(0, 0))
-
-    for block in range(num_blocks):
-        # Display block start message
-        block_text.text = f"Starting Block {block + 1}. Press Enter to start."
-        block_text.draw()
-        win.flip()
-
-        # Wait for Enter key to start the block
-        while True:
-            keys = psychopy_event.waitKeys()
-            if 'return' in keys:
-                break
-            elif 'escape' in keys:
-                win.close()
-                core.quit()
-
-        fixation.draw()
-        win.flip()
-
-        # Block-specific task
-        target_sound_count = 0
-        while target_sound_count < target_sound_count_per_block:
-            if 'escape' in psychopy_event.getKeys():
-                win.close()
-                core.quit()
-
-            # Play standard sound
-            standard_sound_count = random.randint(7, 12)
-            for _ in range(standard_sound_count):
-                sound_440Hz.play()
-                #marker_outlet.push_sample([1])
-                #markers.append(1)
-                #marker_timestamps.append(core.getTime())
-
-                core.wait(0.75)
-
-                if 'escape' in psychopy_event.getKeys():
-                    win.close()
-                    core.quit()
-
-            # Play target sound
-            sound_587Hz.play()
-            #marker_outlet.push_sample([2])
-            target_sound_count += 1
-            #markers.append(2)
-            #marker_timestamps.append(core.getTime())
-
-            core.wait(0.75)
-
-        print(f"Block {block + 1} completed")
-
-    win.close()
-    #core.quit()
-
-async def collect_EEG(client):
+async def start_recording(client):
+    print("Starting recording...")
     await client.start_recording(recording_timer=RECORDING_TIMER)
+    print("Recording finished.")
 
 async def main():
     client = GuardianClient(api_token=my_api_token, address = my_address, debug=True)
@@ -113,19 +47,17 @@ async def main():
         handler=lsl_stream_handler,
     )
 
-    await asyncio.gather(
-        collect_EEG(client),
-        run_experiment(),
-        read_battery_30s(client),
-    )
+    recording_task = asyncio.create_task(client.start_recording(recording_timer=RECORDING_TIMER))
+    battery_task = asyncio.create_task(read_battery_30s(client))
+    await recording_task
+    await stop_task(battery_task)
 
 if __name__ == "__main__":
     asyncio.run(main())
 
 
 ## OLD ##
-    #recording_task = asyncio.create_task(client.start_recording(recording_timer=RECORDING_TIMER))
-    #battery_task = asyncio.create_task(read_battery_30s(client))
+    
     #experiment_task = asyncio.create_task(run_experiment())
     #await recording_task
     #await stop_task(battery_task)
