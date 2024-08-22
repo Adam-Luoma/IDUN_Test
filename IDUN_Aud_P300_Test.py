@@ -10,14 +10,9 @@ from idun_guardian_sdk import GuardianClient
 from psychopy import visual, sound, core, event as psychopy_event
 from pylsl import StreamInfo, StreamOutlet, StreamInlet, resolve_stream
 
-import tracemalloc
-tracemalloc.start()
-
-# Create Subject ID
+# Global Configurations
 subj = "001"  # UPDATE WITH EACH PARTICIPANT
-
-# Customize directory for file saving
-directory = 'C:/Users/Students/source/repos/IDUN_Test/'  #CHANGE DEPENDING ON COMPUTER
+directory = 'C:/Users/Students/source/repos/IDUN_Test/'  # CHANGE DEPENDING ON COMPUTER
 subdir = os.path.join(directory, 'data')
 eeg_path = os.path.join(subdir, f'eeg_data_{subj}A.csv')
 timestamp_path = os.path.join(subdir, f'timestamps_{subj}A.csv')
@@ -36,22 +31,19 @@ client = GuardianClient(address=device_address, api_token=api_token)
 MAINS_FREQUENCY_60Hz = True
 RECORDING_TIMER: int = (60 * 60 * 0.25)  # 15 min
 
-# # Create lists to store the data
+# Create lists to store the data
 eeg_data = []
 timestamps = []
 markers = []
 marker_timestamps = []
 
 
-async def print_impedance(data):
-    print(f"{data}\tOhm")
-
 async def start_recording():
+    print("Starting recording...")
     await client.start_recording(recording_timer=RECORDING_TIMER)
+    print("Recording finished.")
 
-async def main():
-    # start recording in the background
-    recording_task = asyncio.create_task(start_recording())
+
 
 def collect_eeg_data(inlet, data_list, timestamp_list):
     while True:
@@ -60,139 +52,124 @@ def collect_eeg_data(inlet, data_list, timestamp_list):
         timestamp_list.append(timestamp)
 
 
-if __name__ == "__main__":
+async def main():   
+    # Initialize LSL stream for EEG
+    info = StreamInfo("IDUN", "EEG", 1, 250, "float32", client.address)
+    lsl_outlet = StreamOutlet(info, 20, 360)
 
-    try:
-        # Initialize LSL stream
-        info = StreamInfo("IDUN", "EEG", 1, 250, "float32", client.address)
-        lsl_outlet = StreamOutlet(info, 20, 360)
+    # LSL stream handler
+    def lsl_stream_handler(event):
+        message = event.message
+        eeg = message["raw_eeg"]
+        most_recent_ts = eeg[-1]["timestamp"]
+        data = [sample["ch1"] for sample in eeg]
+        lsl_outlet.push_chunk(data, most_recent_ts)
 
-        battery_level = asyncio.run(client.check_battery())
-        print("Battery Level: %s%%" % battery_level)
-    
-        try:
-            # Run the stream_impedance function, limiting it to 20 seconds
-            asyncio.wait_for(client.stream_impedance(handler=print_impedance), timeout=20.0)
-        except asyncio.TimeoutError:
-            print("Task took longer than 20 seconds and was cancelled.")
+    client.subscribe_live_insights(raw_eeg=True, handler=lsl_stream_handler)
 
+    # Set up the LSL stream for markers
+    marker_info = StreamInfo('MarkerStream', 'Markers', 1, 2, 'int32', 'myuidw43536')
+    marker_outlet = StreamOutlet(marker_info)
 
-        def lsl_stream_handler(event):
-            message = event.message
-            eeg = message["raw_eeg"]
-            most_recent_ts = eeg[-1]["timestamp"]
-            data = [sample["ch1"] for sample in eeg]
-            lsl_outlet.push_chunk(data, most_recent_ts)
+    battery_level = await client.check_battery()
+    print(f"Battery Level: {battery_level}%")
 
+    # Start recording in the background
+    recording_task = asyncio.create_task(start_recording())
 
-        client.subscribe_live_insights(
-            raw_eeg=True, 
-            handler=lsl_stream_handler
-        )
+    # Setup PsychoPy window
+    win = visual.Window([800, 600], color='black')
+    fixation = visual.TextStim(win, text='+', color='white', height=0.1)
+    block_text = visual.TextStim(win, text='', color='white', height=0.1, pos=(0, 0))
 
-        print("starting recording")
-        asyncio.run(main())       
-        #asyncio.run(client.start_recording(recording_timer=RECORDING_TIMER))
-        print("Recording has started")
+    # Resolve EEG and Marker streams
+    print("Looking for an EEG stream...")
+    eeg_streams = resolve_stream('type', 'EEG')
+    eeg_inlet = StreamInlet(eeg_streams[0])
 
-       # asyncio.run(client.start_recording(recording_timer=RECORDING_TIMER))
+    print("Looking for a Marker stream...")
+    marker_streams = resolve_stream('type', 'Markers')
+    marker_inlet = StreamInlet(marker_streams[0])
 
-        # # Set up the LSL stream for markers
-        info = StreamInfo('MarkerStream', 'Markers', 1, 2, 'int32', 'myuidw43536')
-        outlet = StreamOutlet(info)
+    # Start EEG data collection in a separate thread
+    eeg_thread = Thread(target=collect_eeg_data, args=(eeg_inlet, eeg_data, timestamps))
+    eeg_thread.daemon = True  # Ensure the thread will close when the main program exits
+    eeg_thread.start()
 
-        # Set up the window and fixation cross
-        win = visual.Window([800, 600], color='black')
-        fixation = visual.TextStim(win, text='+', color='white', height=0.1)
-        block_text = visual.TextStim(win, text='', color='white', height=0.1, pos=(0, 0))
+    # Experimental blocks
+    num_blocks = 2
+    target_sound_count_per_block = 30
 
-        # Resolve the EEG stream
-        print("Looking for an EEG stream...")
-        eeg_streams = resolve_stream('type', 'EEG')
-        eeg_inlet = StreamInlet(eeg_streams[0])
+    for block in range(num_blocks):
+        # Display block start message
+        block_text.text = f"Starting Block {block + 1}. Press Enter to start."
+        block_text.draw()
+        win.flip()
 
-        # # Resolve the Marker stream
-        print("Looking for a Marker stream...")
-        marker_streams = resolve_stream('type', 'Markers')
-        marker_inlet = StreamInlet(marker_streams[0])
+        # Wait for Enter key to start the block
+        while True:
+            keys = psychopy_event.waitKeys()
+            if 'return' in keys:
+                break
+            elif 'escape' in keys:
+                win.close()
+                core.quit()
 
-        # Start the EEG data collection in a separate thread
-        eeg_thread = Thread(target=collect_eeg_data, args=(eeg_inlet, eeg_data, timestamps))
-        eeg_thread.daemon = True  # Ensures the thread will close when the main program exits
-        eeg_thread.start()
+        fixation.draw()
+        win.flip()
 
-        # Number of blocks and target sounds per block
-        num_blocks = 2
-        target_sound_count_per_block = 30
+        # Block-specific task
+        target_sound_count = 0
+        while target_sound_count < target_sound_count_per_block:
+            if 'escape' in psychopy_event.getKeys():
+                win.close()
+                core.quit()
 
-        for block in range(num_blocks):
-            # Display the block number
-            block_text.text = f"Starting Block {block + 1}. Press Enter to start."
-            block_text.draw()
-            win.flip()
+            # Play standard sound
+            standard_sound_count = random.randint(7, 12)
+            for _ in range(standard_sound_count):
+                sound_440Hz.play()
+                marker_outlet.push_sample([1])
+                markers.append(1)
+                marker_timestamps.append(core.getTime())
 
-            # Wait for Enter key press to start the block
-            while True:
-                keys = psychopy_event.waitKeys()
-                if 'return' in keys:  # Check if Enter key (Return) is pressed
-                    break
-                elif 'escape' in keys:  # Allow escape to quit before starting the block
-                    win.close()
-                    core.quit()
+                core.wait(0.75)
 
-            fixation.draw()
-            win.flip()
-
-            # Counter for the target sound in each block
-            target_sound_count = 0
-            while target_sound_count < target_sound_count_per_block:
-                # Check for escape key press
                 if 'escape' in psychopy_event.getKeys():
                     win.close()
                     core.quit()
 
-                # Play the standard sound
-                standard_sound_count = random.randint(7, 12)
-                for _ in range(standard_sound_count):
-                    sound_440Hz.play()
-                    outlet.push_sample([1])  # Send LSL marker for 440 Hz sound
-                    markers.append(1)
-                    marker_timestamps.append(core.getTime())  # Store the time when the marker was sent
+            # Play target sound
+            sound_587Hz.play()
+            marker_outlet.push_sample([2])
+            target_sound_count += 1
+            markers.append(2)
+            marker_timestamps.append(core.getTime())
 
-                    core.wait(0.75)  # Wait for 0.75 second between sounds
+            core.wait(0.75)
 
-                    # Check for escape key press
-                    if 'escape' in psychopy_event.getKeys():
-                        win.close()
-                        core.quit()
+        print(f"Block {block + 1} completed")
 
-                # Play the target sound
-                sound_587Hz.play()
-                outlet.push_sample([2])  # Send LSL marker for 587 Hz sound
-                target_sound_count += 1
-                markers.append(2)
-                marker_timestamps.append(core.getTime())  # Store the time when the marker was sent
+    win.close()
+    core.quit()
 
-                core.wait(0.75)  # Wait for 0.75 second before the next sound
+    print("Data collection finished.")
+    await recording_task
 
-            # Block completed
-            print(f"Block {block + 1} completed")
 
-        win.close()
-        core.quit()
 
-        print("Data collection finished.")
-
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
     except KeyboardInterrupt:
         print("Experiment interrupted by User")
     finally:
-        # Convert the lists to numpy arrays for further processing
-        eeg_data = np.array(eeg_data)  # Shape: (num_samples, num_channels)
-        timestamps = np.array(timestamps)  # Shape: (num_samples,)
-        markers = np.array(markers)  # Shape: (num_markers,)
-        marker_timestamps = np.array(marker_timestamps)  # Shape: (num_markers,)
+        # Save collected data
+        eeg_data = np.array(eeg_data)
+        timestamps = np.array(timestamps)
+        markers = np.array(markers)
+        marker_timestamps = np.array(marker_timestamps)
 
-        # Save the arrays as CSV files
         np.savetxt(eeg_path, eeg_data, delimiter=',')
         np.savetxt(timestamp_path, timestamps, delimiter=',')
         np.savetxt(marker_path, markers, delimiter=',')
