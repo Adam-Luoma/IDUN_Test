@@ -2,12 +2,21 @@ from pylsl import StreamInfo, StreamOutlet
 from psychopy import visual, sound, core, event as psychopy_event
 import random
 
+
 #initialize PsycoPy experiment parameters
 sound_440Hz = sound.Sound("440Hz_tone.wav")
 sound_587Hz = sound.Sound("587Hz_tone.wav")
 num_blocks = 2                      #UPDATE to alter data collection length
 target_sound_count_per_block = 3
 
+
+marker_info = StreamInfo(name = 'MarkerStream', 
+                         type = 'Markers', 
+                         channel_count = 1, 
+                         nominal_srate = 250,
+                         channel_format='int32', 
+                         source_id = 'Marker_Outlet')
+marker_outlet = StreamOutlet(marker_info, 20, 360)
 
 # Setup PsychoPy window
 while True:

@@ -4,7 +4,7 @@ from pylsl import StreamInfo, StreamOutlet
 from idun_guardian_sdk import GuardianClient
 
 #initialize IDUN System
-RECORDING_TIMER: int = (60 * 2)  # 60 sec * 1 min
+RECORDING_TIMER: int = (60 * 2)  # 60 sec * 2 min
 my_api_token = "idun_GAtJDPZJ1bbs47Mf4KEBA3-v35iudqE3NSGSLD3OE8zE8KN2CHcN809-"
 my_address = "E5-1E-FD-F5-15-26"
 
@@ -30,9 +30,15 @@ async def start_recording(client):
     print("Recording finished.")
 
 async def main():
-    client = GuardianClient(api_token=my_api_token, address = my_address, debug=True)
+    client = GuardianClient(api_token=my_api_token, debug=True)
+    client.address = asyncio.run(client.search_device())
 
-    info = StreamInfo("IDUN", "EEG", 1, 250, "float32", client.address)
+    info = StreamInfo(name ="IDUN", 
+                      type = "EEG", 
+                      channel_count = 1,
+                      nominal_srate = 250, 
+                      channel_format = "float32", 
+                      source_id = client.address)
     lsl_outlet = StreamOutlet(info, 20, 360)
 
     def lsl_stream_handler(event):

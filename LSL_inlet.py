@@ -2,18 +2,12 @@ from pylsl import resolve_stream, StreamInlet
 import numpy as np
 import os
 
-from idun_guardian_sdk import GuardianClient
 
 # Global Configurations
 subj = "001"  # UPDATE WITH EACH PARTICIPANT
-directory = 'C:/Users/Students/source/repos/IDUN_Test/'  # CHANGE DEPENDING ON COMPUTER
+directory = 'C:/Users/Adam Luoma/BCI4Kids/IDUN_Test'  # CHANGE DEPENDING ON COMPUTER
 subdir = os.path.join(directory, 'data')
 eeg_path = os.path.join(subdir, f'eeg_data_{subj}.csv')
-
-# Initialize IDUN
-my_api_token = "idun_GAtJDPZJ1bbs47Mf4KEBA3-v35iudqE3NSGSLD3OE8zE8KN2CHcN809-"
-my_address = "E5-1E-FD-F5-15-26"
-client = GuardianClient(api_token=my_api_token, address = my_address)
 
 # EEG Stream Info
 eeg_stream = resolve_stream(name ="IDUN", type = "EEG", )
