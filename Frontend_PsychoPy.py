@@ -53,9 +53,7 @@ while True:
             standard_sound_count = random.randint(7, 12)
             for _ in range(standard_sound_count):
                 sound_440Hz.play()
-                # marker_outlet.push_sample([1])
-                # markers.append(1)
-                # marker_timestamps.append(core.getTime())
+                marker_outlet.push_sample([1])
 
                 core.wait(0.75)
 
@@ -65,10 +63,8 @@ while True:
 
             # Play target sound
             sound_587Hz.play()
-            # marker_outlet.push_sample([2])
+            marker_outlet.push_sample([2])
             target_sound_count += 1
-            # markers.append(2)
-            # marker_timestamps.append(core.getTime())
 
             core.wait(0.75)
 
