@@ -25,7 +25,9 @@ eeg_streams, marker_streams = resolve_lsl_streams()
 # If streams are found, create inlets
 if eeg_streams and marker_streams:
     eeg_inlet = StreamInlet(eeg_streams[0])
+    print("EEG stream successfully found")
     marker_inlet = StreamInlet(marker_streams[0])
+    print("Marker stream successfully found")
 
 # Flag to control the loop
     streams_active = True
@@ -66,7 +68,7 @@ if eeg_streams and marker_streams:
                 break
 
 else:
-    print("No streams found. Exiting.")
+    print("No streams found in LSL INLET SCRIPT Exiting.")
 
 # Convert to NumPy array
 combined_data = np.array(combined_data, dtype=object)   
