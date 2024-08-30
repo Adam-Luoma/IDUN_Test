@@ -1,5 +1,6 @@
 import threading
 import subprocess
+import time
 
 """
 NOTES For Running the IDUN application:
@@ -21,6 +22,10 @@ if __name__ == "__main__":
 
     script1_thread.start()
     script2_thread.start()
+    # Wait for 10 seconds to allow the rest of the system to initialize
+    print("Waiting for system to initialize...")
+    time.sleep(20)
+    print("Starting data collection...")
     script3_thread.start()
 
     script1_thread.join()

@@ -8,6 +8,7 @@ subj = "001"  # UPDATE WITH EACH PARTICIPANT
 directory = 'C:/Users/Adam Luoma/BCI4Kids/IDUN_Test'  # CHANGE DEPENDING ON COMPUTER
 subdir = os.path.join(directory, 'data')
 eeg_path = os.path.join(subdir, f'eeg_data_{subj}.csv')
+marker_path = os.path.join(subdir, f'marker_data_{subj}.csv')
 
 # Function to try resolving streams
 def resolve_lsl_streams():
@@ -17,7 +18,10 @@ def resolve_lsl_streams():
     return eeg_streams, marker_streams
 
 # Initialize an empty list to store combined data
-combined_data = []
+eeg_samples = []
+eeg_timestamps = []
+marker_samples = []
+marker_timestamps = []
 
 # Attempt to resolve streams
 eeg_streams, marker_streams = resolve_lsl_streams()
@@ -37,7 +41,9 @@ if eeg_streams and marker_streams:
         try:
             # Pull EEG data
             eeg_sample, eeg_timestamp = eeg_inlet.pull_sample(timeout=1.0)
-
+            eeg_samples.append(eeg_sample)
+            eeg_timestamps.append(eeg_timestamp)
+            
             # Check if the EEG stream has ended
             if eeg_sample is None:
                 print("EEG stream ended.")
@@ -46,14 +52,9 @@ if eeg_streams and marker_streams:
 
             # Pull Marker data (check with timeout to avoid blocking)
             marker_sample, marker_timestamp = marker_inlet.pull_sample(timeout=0.0)
-
-            # Combine EEG and Marker into a single column
-            if marker_sample and abs(marker_timestamp - eeg_timestamp) < 0.001:
-                combined_sample = np.concatenate(([eeg_timestamp], eeg_sample, marker_sample))
-            else:
-                combined_sample = np.concatenate(([eeg_timestamp], eeg_sample, ['']))
-
-            combined_data.append(combined_sample)
+            marker_samples.append(marker_sample)
+            marker_timestamps.append(marker_timestamp)
+            
 
         except Exception as e:
             print(f"Error: {e}. Reconnecting...")
@@ -70,8 +71,21 @@ if eeg_streams and marker_streams:
 else:
     print("No streams found in LSL INLET SCRIPT Exiting.")
 
+# Insert NaN for missing values
+eeg_samples_clean = [np.nan if sample is None else sample for sample in eeg_samples]
+eeg_timestamps_clean = [np.nan if sample is None else sample for sample in eeg_timestamps]
+marker_samples_clean = [np.nan if sample is None else sample for sample in marker_samples]
+marker_timestamps_clean = [np.nan if sample is None else sample for sample in marker_timestamps]
+
 # Convert to NumPy array
-combined_data = np.array(combined_data, dtype=object)   
+eeg_samples_array = np.array(eeg_samples_clean)
+eeg_timestamps_array = np.array(eeg_timestamps_clean)
+marker_samples_array = np.array(marker_samples_clean)
+marker_timestamps_array = np.array(marker_timestamps_clean)
     
+eeg_data = np.vstack([eeg_samples_array, eeg_timestamps_array])
+marker_data = np.vstack([marker_samples_array, marker_timestamps_array])
+
 # Convert to NumPy arrays and save as CSV
-np.savetxt(eeg_path, combined_data, delimiter=',')
+np.savetxt(eeg_path, eeg_data, delimiter=',')
+np.savetxt(marker_path, marker_data, delimiter=',')

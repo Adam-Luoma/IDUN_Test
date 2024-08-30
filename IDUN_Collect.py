@@ -3,7 +3,7 @@ from pylsl import StreamInfo, StreamOutlet
 
 from idun_guardian_sdk import GuardianClient
 
-RECORDING_TIMER: int = (60 * 1)  # 2 min
+RECORDING_TIMER: int = (60 * 1.5)  # = 60 seconds * n minutes
 my_api_token = "idun_GAtJDPZJ1bbs47Mf4KEBA3-v35iudqE3NSGSLD3OE8zE8KN2CHcN809-"
 
 
