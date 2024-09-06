@@ -71,21 +71,34 @@ if eeg_streams and marker_streams:
 else:
     print("No streams found in LSL INLET SCRIPT Exiting.")
 
-# Insert NaN for missing values
-eeg_samples_clean = [np.nan if sample is None else sample for sample in eeg_samples]
-eeg_timestamps_clean = [np.nan if sample is None else sample for sample in eeg_timestamps]
-marker_samples_clean = [np.nan if sample is None else sample for sample in marker_samples]
-marker_timestamps_clean = [np.nan if sample is None else sample for sample in marker_timestamps]
+# Clean and Save
+cleaned_eeg_samples = [sample[0] for sample in eeg_samples if sample is not None]
+cleaned_eeg_samples_array = np.array(cleaned_eeg_samples)
+eeg_timestamps_array = np.array(eeg_timestamps[:len(cleaned_eeg_samples)])
+eeg_data_matrix = np.vstack([cleaned_eeg_samples_array, eeg_timestamps_array])
+np.savetxt(eeg_path, eeg_data_matrix.T, delimiter=',')
 
-# Convert to NumPy array
-eeg_samples_array = np.array(eeg_samples_clean)
-eeg_timestamps_array = np.array(eeg_timestamps_clean)
-marker_samples_array = np.array(marker_samples_clean)
-marker_timestamps_array = np.array(marker_timestamps_clean)
+# Filter out None values and keep only the markers [1] and [2] with their corresponding timestamps
+filtered_markers_and_timestamps = [
+    (sample[0], timestamp) for sample, timestamp in zip(marker_samples, marker_timestamps)
+    if sample is not None and isinstance(sample, list) and sample[0] in [1, 2]
+]
+
+if not filtered_markers_and_timestamps:
+    print("No markers [1] or [2] found in the data.")
+else:
+    # Separate the filtered markers and timestamps
+    cleaned_marker_samples, cleaned_marker_timestamps = zip(*filtered_markers_and_timestamps)
     
-eeg_data = np.vstack([eeg_samples_array, eeg_timestamps_array])
-marker_data = np.vstack([marker_samples_array, marker_timestamps_array])
+    # Convert the cleaned markers and timestamps to numpy arrays
+    cleaned_marker_samples_array = np.array(cleaned_marker_samples).reshape(-1, 1)  # Reshape to (N, 1)
+    cleaned_marker_timestamps_array = np.array(cleaned_marker_timestamps).reshape(-1, 1)  # Already (N, 1)
+    
+    # Stack the marker samples and their corresponding timestamps horizontally
+    marker_data_matrix = np.hstack([cleaned_marker_samples_array, cleaned_marker_timestamps_array])
+    
+    # Save the data matrix to a CSV file
+    np.savetxt(marker_path, marker_data_matrix, delimiter=',')
 
-# Convert to NumPy arrays and save as CSV
-np.savetxt(eeg_path, eeg_data, delimiter=',')
-np.savetxt(marker_path, marker_data, delimiter=',')
+
+    

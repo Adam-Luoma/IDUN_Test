@@ -7,7 +7,7 @@ import random
 sound_440Hz = sound.Sound("440Hz_tone.wav")
 sound_587Hz = sound.Sound("587Hz_tone.wav")
 num_blocks = 2                      #UPDATE to alter data collection length
-target_sound_count_per_block = 3
+target_sound_count_per_block = 2
 
 
 marker_info = StreamInfo(name = 'MarkerStream', 
