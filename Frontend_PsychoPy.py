@@ -1,4 +1,4 @@
-from pylsl import StreamInfo, StreamOutlet
+from pylsl import StreamInfo, StreamOutlet, local_clock
 from psychopy import visual, sound, core, event as psychopy_event
 import random
 
@@ -8,7 +8,7 @@ sound_440Hz = sound.Sound("440Hz_tone.wav")
 sound_587Hz = sound.Sound("587Hz_tone.wav")
 num_blocks = 2                      #UPDATE to alter data collection length
 target_sound_count_per_block = 2
-
+start_time = local_clock()
 
 marker_info = StreamInfo(name = 'MarkerStream', 
                          type = 'Markers', 
@@ -53,7 +53,9 @@ while True:
             standard_sound_count = random.randint(7, 12)
             for _ in range(standard_sound_count):
                 sound_440Hz.play()
-                marker_outlet.push_sample([1])
+                marker_1 = 1
+                timestamp = local_clock() - start_time
+                marker_outlet.push_sample(marker_1, timestamp)
 
                 core.wait(0.75)
 
@@ -63,7 +65,9 @@ while True:
 
             # Play target sound
             sound_587Hz.play()
-            marker_outlet.push_sample([2])
+            marker_2 = 2
+            timestamp = local_clock() - start_time
+            marker_outlet.push_sample(marker_2, timestamp)
             target_sound_count += 1
 
             core.wait(0.75)
