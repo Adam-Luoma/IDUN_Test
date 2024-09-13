@@ -4,7 +4,7 @@ from pylsl import StreamInfo, StreamOutlet, local_clock
 from idun_guardian_sdk import GuardianClient
 
 RECORDING_TIMER: int = (60 * 1)  # = 60 seconds * n minutes
-my_api_token = "XXXXXXX"
+my_api_token = "XXXXXX"
 
 
 async def stop_task(task):
@@ -29,15 +29,13 @@ async def main():
     info = StreamInfo("IDUN", "EEG", 1, 250, "float32", client.address)
     lsl_outlet = StreamOutlet(info, 20, 360)
 
-    start_time = local_clock()
 
     def lsl_stream_handler(event):
         message = event.message
         eeg = message["raw_eeg"]
-        #most_recent_ts = eeg[-1]["timestamp"]
-        normalized_ts = local_clock - start_time
+        most_recent_ts = eeg[-1]["timestamp"]
         data = [sample["ch1"] for sample in eeg]
-        lsl_outlet.push_chunk(data, normalized_ts)
+        lsl_outlet.push_chunk(data, most_recent_ts)
 
     client.subscribe_live_insights(
         raw_eeg=True,
