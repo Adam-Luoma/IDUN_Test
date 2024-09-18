@@ -6,8 +6,8 @@ import time
 #initialize PsycoPy experiment parameters
 sound_440Hz = sound.Sound("440Hz_tone.wav")
 sound_587Hz = sound.Sound("587Hz_tone.wav")
-num_blocks = 2                      #UPDATE to alter data collection length
-target_sound_count_per_block = 2
+num_blocks = 4                      #UPDATE to alter data collection length
+target_sound_count_per_block = 20
 
 #Map timing to Unix epoch
 unix_offset = time.time() - local_clock()
