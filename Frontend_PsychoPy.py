@@ -6,8 +6,8 @@ import time
 #initialize PsycoPy experiment parameters
 sound_440Hz = sound.Sound("440Hz_tone.wav")
 sound_587Hz = sound.Sound("587Hz_tone.wav")
-num_blocks = 4                      #UPDATE to alter data collection length
-target_sound_count_per_block = 20
+num_blocks = 2                     #UPDATE to alter data collection length
+target_sound_count_per_block = 2
 
 #Map timing to Unix epoch
 unix_offset = time.time() - local_clock()
@@ -59,7 +59,7 @@ while True:
                 timestamp = local_clock() + unix_offset
                 marker_outlet.push_sample(marker_1, timestamp)
 
-                core.wait(0.75)
+                core.wait(random.uniform(0.75,1.0))
 
                 if 'escape' in psychopy_event.getKeys():
                     win.close()
@@ -72,9 +72,14 @@ while True:
             marker_outlet.push_sample(marker_2, timestamp)
             target_sound_count += 1
 
-            core.wait(0.75)
+            core.wait(random.uniform(0.75,1.0))
 
         print(f"Block {block + 1} completed")
+
+    # After all blocks are complete, send the stop signal
+    with open("stop_signal.txt", "w") as stop_file:
+        stop_file.write("STOP")
+    print("Stop signal sent.")
 
     win.close()
     core.quit()

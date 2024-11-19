@@ -1,10 +1,15 @@
 import asyncio
 from pylsl import StreamInfo, StreamOutlet, local_clock
-
 from idun_guardian_sdk import GuardianClient
+import os
 
-RECORDING_TIMER: int = (60 * 13)  # = 60 seconds * n minutes
-my_api_token = "XXXXXX"
+RECORDING_TIMER: int = (60 * 120)  # = 60 seconds * n minutes
+directory = os.getcwd()  
+api_path = os.path.join(directory, "API_Key.txt")
+with open(api_path, 'r') as file:
+    my_api_token = file.read().strip()  # Strip removes any whitespace or newline characters
+
+print(f"API Key: {my_api_token}")
 
 
 async def stop_task(task):
@@ -20,6 +25,10 @@ async def read_battery_30(client):
         battery = await client.check_battery()
         print("Battery Level: %s%%" % battery)
         await asyncio.sleep(30)
+
+def check_stop_signal():
+    """Check if the stop signal file exists."""
+    return os.path.exists("stop_signal.txt")
 
 
 async def main():
@@ -44,8 +53,16 @@ async def main():
 
     recording_task = asyncio.create_task(client.start_recording(recording_timer=RECORDING_TIMER))
     battery_task = asyncio.create_task(read_battery_30(client))
-    await recording_task
+
+    while not check_stop_signal():
+        await asyncio.sleep(5)  # Non-blocking check for stop signal
+
+    print("Stop signal received. Stopping tasks...")
+    await stop_task(recording_task)
     await stop_task(battery_task)
+
+if os.path.exists("stop_signal.txt"):
+    os.remove("stop_signal.txt")
 
 
 if __name__ == "__main__":

@@ -4,8 +4,8 @@ import os
 import time
 
 # Data storage
-subj = "003"  # UPDATE WITH EACH PARTICIPANT
-directory = 'C:/Users/Adam Luoma/BCI4Kids/IDUN_Test'  # CHANGE DEPENDING ON COMPUTER
+subj = "011"  # UPDATE WITH EACH PARTICIPANT
+directory = os.getcwd()  
 subdir = os.path.join(directory, 'data')
 eeg_path = os.path.join(subdir, f'eeg_data_{subj}.csv')
 marker_path = os.path.join(subdir, f'marker_data_{subj}.csv')
@@ -99,6 +99,3 @@ else:
     
     # Save the data matrix to a CSV file
     np.savetxt(marker_path, marker_data_matrix, delimiter=',')
-
-
-    
