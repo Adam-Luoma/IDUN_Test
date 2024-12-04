@@ -20,6 +20,7 @@ if __name__ == "__main__":
     script2_thread = threading.Thread(target=run_script, args=("Frontend_PsychoPy.py",))
     #script2_thread = threading.Thread(target=run_script, args=("psychopy_visual_p300.py",))
     script3_thread = threading.Thread(target=run_script, args=("LSL_inlet.py",))
+    #script3_thread = threading.Thread(target=run_script, args=("LSL_inlet_w_DSI.py",))
 
     script1_thread.start()
     script2_thread.start()
