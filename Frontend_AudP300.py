@@ -5,7 +5,7 @@ import time
 
 # Initialize PsychoPy experiment parameters
 sound_440Hz = sound.Sound("440Hz_tone.wav")
-sound_587Hz = sound.Sound("587Hz_tone.wav")  # High note
+sound_523Hz = sound.Sound("523Hz_tone.wav")  # High note
 sound_349Hz = sound.Sound("349Hz_tone.wav")  # Low note
 
 num_blocks = 2  # UPDATE to alter data collection length
@@ -65,7 +65,7 @@ while True:
             sounds = ['440Hz'] * distractor_sound_count
             target_indices = random.sample(range(4, distractor_sound_count), 2)
             sounds[target_indices[0]] = '349Hz'
-            sounds[target_indices[1]] = '587Hz'
+            sounds[target_indices[1]] = '523Hz'
 
             # Shuffle target placement independently
             random.shuffle(target_indices)
@@ -75,8 +75,8 @@ while True:
                 if sound_type == '440Hz':
                     sound_440Hz.play()
                     marker = [1]
-                elif sound_type == '587Hz':
-                    sound_587Hz.play()
+                elif sound_type == '523Hz':
+                    sound_523Hz.play()
                     marker = [high_note_marker]
                 elif sound_type == '349Hz':
                     sound_349Hz.play()
