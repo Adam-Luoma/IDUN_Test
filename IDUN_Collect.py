@@ -2,6 +2,14 @@ import asyncio
 from pylsl import StreamInfo, StreamOutlet, local_clock
 from idun_guardian_sdk import GuardianClient
 import os
+import time
+
+'''
+This script is used to collect EEG data from the IDUN Guardian and send it to a Lab Streaming Layer (LSL) outlet.
+Note you will need to have a local .txt file with your API key in the same directory as this script.
+The file should be named API_Key.txt and contain only the API key.
+The script will also search for a stop_signal.txt file when the EEG data collection is complete, include writing this file in your experiment to terminate recording when needed.
+'''
 
 RECORDING_TIMER: int = (60 * 120)  # = 60 seconds * n minutes
 directory = os.getcwd()  
@@ -11,7 +19,10 @@ with open(api_path, 'r') as file:
 
 print(f"API Key: {my_api_token}")
 
+# Map timing to Unix epoch
+unix_offset = time.time() - local_clock()
 
+# Function to stop a task gracefully
 async def stop_task(task):
     task.cancel()
     try:
@@ -19,18 +30,11 @@ async def stop_task(task):
     except asyncio.CancelledError:
         pass
 
-
-async def read_battery_30(client):
-    while True:
-        battery = await client.check_battery()
-        print("Battery Level: %s%%" % battery)
-        await asyncio.sleep(30)
-
 def check_stop_signal():
     """Check if the stop signal file exists."""
     return os.path.exists("stop_signal.txt")
 
-
+# Connect to the IDUN and stream data to LSL
 async def main():
     client = GuardianClient(api_token=my_api_token, debug=True)
     client.address = await client.search_device()
@@ -38,11 +42,10 @@ async def main():
     info = StreamInfo("IDUN", "EEG", 1, 250, "float32", client.address)
     lsl_outlet = StreamOutlet(info, 20, 360)
 
-
     def lsl_stream_handler(event):
         message = event.message
         eeg = message["raw_eeg"]
-        most_recent_ts = eeg[-1]["timestamp"]
+        most_recent_ts = eeg[-1]["timestamp"] - unix_offset
         data = [sample["ch1"] for sample in eeg]
         lsl_outlet.push_chunk(data, most_recent_ts)
 
@@ -52,18 +55,17 @@ async def main():
     )
 
     recording_task = asyncio.create_task(client.start_recording(recording_timer=RECORDING_TIMER))
-    battery_task = asyncio.create_task(read_battery_30(client))
 
+    # Wait for the recording to finish or for a stop signal
     while not check_stop_signal():
         await asyncio.sleep(5)  # Non-blocking check for stop signal
 
     print("Stop signal received. Stopping tasks...")
     await stop_task(recording_task)
-    await stop_task(battery_task)
 
+#clear previous stop signal file if it exists
 if os.path.exists("stop_signal.txt"):
     os.remove("stop_signal.txt")
-
 
 if __name__ == "__main__":
     asyncio.run(main())

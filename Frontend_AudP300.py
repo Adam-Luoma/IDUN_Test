@@ -1,7 +1,6 @@
 from pylsl import StreamInfo, StreamOutlet, local_clock
 from psychopy import visual, sound, core, event as psychopy_event
 import random
-import time
 
 # Initialize PsychoPy experiment parameters
 sound_440Hz = sound.Sound("440Hz_tone.wav")
@@ -10,10 +9,7 @@ sound_349Hz = sound.Sound("349Hz_tone.wav")  # Low note
 
 num_blocks = 2  # UPDATE to alter data collection length
 num_trials_per_block = 3
-distractor_sound_count = 12
-
-# Map timing to Unix epoch
-unix_offset = time.time() - local_clock()
+distractor_sound_count = 10
 
 marker_info = StreamInfo(name='MarkerStream',
                          type='Markers',
@@ -83,7 +79,7 @@ while True:
                     marker = [low_note_marker]
 
                 # Send LSL marker with timestamp
-                timestamp = local_clock() + unix_offset
+                timestamp = local_clock()
                 marker_outlet.push_sample(marker, timestamp)
 
                 core.wait(random.uniform(0.5, 0.75))

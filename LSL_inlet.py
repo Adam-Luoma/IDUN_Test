@@ -4,7 +4,7 @@ import os
 import time
 
 # Data storage
-subj = "011"  # UPDATE WITH EACH PARTICIPANT
+subj = "0X"  # UPDATE WITH EACH PARTICIPANT
 directory = os.getcwd()  
 subdir = os.path.join(directory, 'data')
 eeg_path = os.path.join(subdir, f'eeg_data_{subj}.csv')

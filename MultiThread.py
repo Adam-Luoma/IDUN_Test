@@ -17,7 +17,7 @@ def run_script(script_name):
 
 if __name__ == "__main__":
     script1_thread = threading.Thread(target=run_script, args=("IDUN_Collect.py",))
-    script2_thread = threading.Thread(target=run_script, args=("Frontend_PsychoPy.py",))
+    script2_thread = threading.Thread(target=run_script, args=("Frontend_AudP300.py",))
     #script2_thread = threading.Thread(target=run_script, args=("psychopy_visual_p300.py",))
     script3_thread = threading.Thread(target=run_script, args=("LSL_inlet.py",))
     #script3_thread = threading.Thread(target=run_script, args=("LSL_inlet_w_DSI.py",))
