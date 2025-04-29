@@ -4,7 +4,7 @@ import os
 import time
 
 # Data storage
-subj = "00XX"  # UPDATE WITH EACH PARTICIPANT
+subj = "AudP300_00XX"  # UPDATE WITH EACH PARTICIPANT
 directory = 'C:/Users/Adam Luoma/BCI4Kids/IDUN_Test'  # CHANGE DEPENDING ON COMPUTER
 subdir = os.path.join(directory, 'data')
 eeg_path = os.path.join(subdir, f'eeg_data_{subj}.csv')

@@ -1,12 +1,9 @@
 import random
 from pylsl import StreamInfo, StreamOutlet, local_clock
-import time
 from psychopy import visual, core, event as psychopy_event
 
 num_squares = 9
 num_cycles = 20
-unix_offset = time.time() - local_clock()
-print("unix_offset:", unix_offset)
 
 marker_info = StreamInfo(name='MarkerStream',
                          type='Markers',
@@ -16,9 +13,6 @@ marker_info = StreamInfo(name='MarkerStream',
                          source_id='Marker_Outlet')
 marker_outlet = StreamOutlet(marker_info, 20, 360)
 
-def get_timestamp():
-    # return time.time()
-    return local_clock() + unix_offset
 
 def start_window():
     window = visual.Window([800, 600], color='black')
@@ -26,9 +20,6 @@ def start_window():
     start_text = visual.TextStim(window, text="Press Enter to start", color='white', height=0.1, pos=(0, 0.85))
     start_text.draw()
     window.flip()
-
-    start_timestamp = get_timestamp()
-    marker_outlet.push_sample(["Experiment started"], start_timestamp)
 
     while True:
         keys = psychopy_event.waitKeys()
@@ -74,7 +65,7 @@ def start_window():
             check_close(window)
 
             # flash for 100ms
-            squares[i].fillColor = 'red'
+            squares[i].fillColor = 'white'
             for square in squares:
                 square.draw()
             for label in labels:
@@ -83,11 +74,9 @@ def start_window():
             window.flip()
 
             # mark start of flash
-            timestamp = get_timestamp()
+            timestamp = local_clock()
             marker_outlet.push_sample([f"{chr(i+65)}"], timestamp)
             # print(f"Flashing square {chr(i+65)} at {timestamp}")
-            if start_timestamp is None:
-                start_timestamp = timestamp
 
             # wait 100ms
             core.wait(0.1)
@@ -108,18 +97,11 @@ def start_window():
 
         prev_cycle = cycle
 
-        # mark end of cycle
-        timestamp = get_timestamp()
-        marker_outlet.push_sample([f"Cycle {num + 1}"], timestamp)
         
         # wait 200ms between cycles
         core.wait(0.2)
         print(f"Cycle #{num + 1}")
 
-    # mark end of experiment
-    end_timestamp = get_timestamp()
-    marker_outlet.push_sample(["Experiment ended"], end_timestamp)
-    print(f"Experiment started at {start_timestamp} and ended at {end_timestamp}. Duration of {end_timestamp - start_timestamp} seconds.")
 
     finished_text = visual.TextStim(window, text="Finished", color='white', height=0.1, pos=(0, 0))
     finished_text.draw()
