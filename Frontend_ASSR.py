@@ -2,7 +2,8 @@ from pylsl import StreamInfo, StreamOutlet, local_clock
 from psychopy import visual, sound, core, event as psychopy_event
 import random
 
-
+from psychopy import prefs
+prefs.hardware['audioLib'] = ['Speakers (Realtek(R) Audio)']
 
 # Initialize sounds
 PL_SR = sound.Sound("Audio/PL_SR_cut.wav")
@@ -66,17 +67,17 @@ while True:
             # Play sounds in sequence
             for i in order:
                 if i == 1:
-                    PL_SR.play()
                     marker = [PL_SR_marker]
+                    timestamp = local_clock()
+                    marker_outlet.push_sample(marker, timestamp)
+                    PL_SR.play()
+                    PL_SR.waitDone()
+                    
                 elif i == 2:
                     PR_SL.play()
                     marker = [PR_SL_marker]
 
-                # Send LSL marker with timestamp
-                timestamp = local_clock()
-                marker_outlet.push_sample(marker, timestamp)
-
-                  # 5-second blank screen break
+                # 5-second blank screen break
                 win.flip()
                 core.wait(5.0)
 
