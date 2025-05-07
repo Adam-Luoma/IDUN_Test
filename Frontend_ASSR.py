@@ -18,8 +18,8 @@ marker_info = StreamInfo(name='MarkerStream',
 marker_outlet = StreamOutlet(marker_info, 20, 360)
 
 # Trial parameters
-num_blocks = 8 
-num_trials = 10
+num_blocks = 5 
+num_trials = 20
 
 
 # Setup PsychoPy window
@@ -71,11 +71,14 @@ while True:
                     timestamp = local_clock()
                     marker_outlet.push_sample(marker, timestamp)
                     PL_SR.play()
-                    PL_SR.waitDone()
+                    core.wait(20.0)
                     
                 elif i == 2:
-                    PR_SL.play()
                     marker = [PR_SL_marker]
+                    timestamp = local_clock()
+                    marker_outlet.push_sample(marker, timestamp)
+                    PR_SL.play()
+                    core.wait(20.0)
 
                 # 5-second blank screen break
                 win.flip()

@@ -2,13 +2,16 @@ from pylsl import StreamInfo, StreamOutlet, local_clock
 from psychopy import visual, sound, core, event as psychopy_event
 import random
 
+from psychopy import prefs
+prefs.hardware['audioLib'] = ['Speakers (Realtek(R) Audio)']
+
 # Initialize PsychoPy experiment parameters
-sound_440Hz = sound.Sound("440Hz_tone.wav")
-sound_523Hz = sound.Sound("523Hz_tone.wav")  # High note
-sound_349Hz = sound.Sound("349Hz_tone.wav")  # Low note
+sound_440Hz = sound.Sound("Audio/440Hz_tone.wav")
+sound_523Hz = sound.Sound("Audio/523Hz_tone.wav")  # High note
+sound_349Hz = sound.Sound("Audio/349Hz_tone.wav")  # Low note
 
 num_blocks = 2  # UPDATE to alter data collection length
-num_trials_per_block = 3
+num_trials_per_block = 2
 distractor_sound_count = 10
 
 marker_info = StreamInfo(name='MarkerStream',
@@ -26,14 +29,14 @@ while True:
     block_text = visual.TextStim(win, text='', color='white', height=0.1, pos=(0, 0))
 
     for block in range(num_blocks):
-        # Set target instructions based on block number
+        # Set target instructions based on block number 2 is tartget 1 is non-target
         if block % 2 == 0:  # Odd block
             target_instruction = "Listen for the high note."
             high_note_marker = 2
-            low_note_marker = 3
+            low_note_marker = 1
         else:  # Even block
             target_instruction = "Listen for the low note."
-            high_note_marker = 3
+            high_note_marker = 1
             low_note_marker = 2
 
         # Display block start message
@@ -70,19 +73,18 @@ while True:
             for i, sound_type in enumerate(sounds):
                 if sound_type == '440Hz':
                     sound_440Hz.play()
-                    marker = [1]
                 elif sound_type == '523Hz':
-                    sound_523Hz.play()
                     marker = [high_note_marker]
+                    timestamp = local_clock()
+                    marker_outlet.push_sample(marker, timestamp)
+                    sound_523Hz.play()
                 elif sound_type == '349Hz':
-                    sound_349Hz.play()
                     marker = [low_note_marker]
+                    timestamp = local_clock()
+                    marker_outlet.push_sample(marker, timestamp)
+                    sound_349Hz.play()
 
-                # Send LSL marker with timestamp
-                timestamp = local_clock()
-                marker_outlet.push_sample(marker, timestamp)
-
-                core.wait(random.uniform(0.5, 0.75))
+                core.wait(random.uniform(0.25, 0.5))
 
                 if 'escape' in psychopy_event.getKeys():
                     win.close()

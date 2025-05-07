@@ -42,6 +42,15 @@ async def main():
     info = StreamInfo("IDUN", "EEG", 1, 250, "float32", client.address)
     lsl_outlet = StreamOutlet(info, 20, 360)
 
+    # --- Add channel metadata ---
+    chns = info.desc().append_child("channels")
+    ch = chns.append_child("channel")
+    ch.append_child_value("label", "IDUN_0")
+    ch.append_child_value("unit", "microvolts")
+    ch.append_child_value("type", "EEG")
+
+    lsl_outlet = StreamOutlet(info, 20, 360)
+
     def lsl_stream_handler(event):
         message = event.message
         eeg = message["raw_eeg"]

@@ -2,8 +2,10 @@ import random
 from pylsl import StreamInfo, StreamOutlet, local_clock
 from psychopy import visual, core, event as psychopy_event
 
-num_squares = 9
-num_cycles = 20
+# === PARAMETERS ===
+num_squares  = 9
+num_blocks   = 5    # number of blocks (i.e. different targets)
+num_repeats  = 20   # number of target appearances per block
 
 marker_info = StreamInfo(name='MarkerStream',
                          type='Markers',
@@ -13,112 +15,96 @@ marker_info = StreamInfo(name='MarkerStream',
                          source_id='Marker_Outlet')
 marker_outlet = StreamOutlet(marker_info, 20, 360)
 
+# Map each square to a human‐readable name
+square_labels = {
+    0: "Top Left",    1: "Top Center", 2: "Top Right",
+    3: "Middle Left", 4: "Center",     5: "Middle Right",
+    6: "Bottom Left", 7: "Bottom Center", 8: "Bottom Right"
+}
 
 def start_window():
     window = visual.Window([800, 600], color='black')
 
-    start_text = visual.TextStim(window, text="Press Enter to start", color='white', height=0.1, pos=(0, 0.85))
-    start_text.draw()
-    window.flip()
-
+    # --- START SCREEN & COUNTDOWN ---
+    start_text = visual.TextStim(window, text="Press Enter to start",
+                                 color='white', height=0.1, pos=(0, 0.85))
+    start_text.draw(); window.flip()
     while True:
         keys = psychopy_event.waitKeys()
         if 'return' in keys:
-            # countdown from 3
-            for i in range(3, 0, -1):
-                countdown = visual.TextStim(window, text=str(i), color='white', height=0.1, pos=(0, 0))
-                countdown.draw()
-                window.flip()
-                core.wait(1)
+            for i in (3,2,1):
+                visual.TextStim(window, text=str(i),
+                               color='white', height=0.1, pos=(0,0)).draw()
+                window.flip(); core.wait(1)
             break
         elif 'escape' in keys:
-            window.close()
-            core.quit()
-    
-    # positions for the 3x3 grid
-    positions = [(-0.5, 0.5), (0, 0.5), (0.5, 0.5),
-             (-0.5, 0), (0, 0), (0.5, 0),
-             (-0.5, -0.5), (0, -0.5), (0.5, -0.5)]
+            window.close(); core.quit()
 
-    # create 3x3 grid of squares and labels
-    squares = [visual.Rect(window, width=0.4, height=0.4, pos=pos, fillColor='grey') for pos in positions]
-    labels = [visual.TextStim(window, text=chr(i + 65), color='white', height=0.1, pos=pos) for i, pos in enumerate(positions)]
+    # --- PRE‐CREATE GRID SQUARES & LABELS ---
+    positions = [(-0.5,  0.5), (0, 0.5), (0.5, 0.5),
+                 (-0.5,   0),   (0,   0), (0.5,   0),
+                 (-0.5, -0.5),  (0, -0.5), (0.5, -0.5)]
+    squares = [visual.Rect(window, width=0.4, height=0.4,
+                           pos=pos, fillColor='grey')
+               for pos in positions]
+    labels  = [visual.TextStim(window, text=chr(i+65),
+                               color='white', height=0.1, pos=pos)
+               for i, pos in enumerate(positions)]
 
-    for square in squares:
-        square.draw()
-    for label in labels:
-        label.draw()
+    def draw_grid():
+        for sq in squares: sq.draw()
+        for lb in labels:  lb.draw()
 
-    window.flip()
-    prev_cycle = None
-
-    for num in range(num_cycles):
-        # randomly order the 9 squares
-        cycle = random.sample(range(num_squares), num_squares)
-
-        # ensure that the same square doesn't appear in consecutive cycles
-        if prev_cycle:
-            while cycle[0] == prev_cycle[-1]:
-                cycle = random.sample(range(num_squares), num_squares)
-    
-        for i in cycle:
-            check_close(window)
-
-            # flash for 100ms
-            squares[i].fillColor = 'white'
-            for square in squares:
-                square.draw()
-            for label in labels:
-                label.draw()
-
-            window.flip()
-
-            # mark start of flash
-            timestamp = local_clock()
-            marker_outlet.push_sample([f"{chr(i+65)}"], timestamp)
-            # print(f"Flashing square {chr(i+65)} at {timestamp}")
-
-            # wait 100ms
-            core.wait(0.1)
-
-            # return to grey for 100ms
-            squares[i].fillColor = 'grey'
-            for square in squares:
-                square.draw()
-            for label in labels:
-                label.draw()
-            window.flip()
-            
-            # wait between 50-200ms
-            wait_time = random.uniform(0.05, 0.2)
-            core.wait(wait_time)
-
-            # do we need to mark end of flash?
-
-        prev_cycle = cycle
-
-        
-        # wait 200ms between cycles
-        core.wait(0.2)
-        print(f"Cycle #{num + 1}")
-
-
-    finished_text = visual.TextStim(window, text="Finished", color='white', height=0.1, pos=(0, 0))
-    finished_text.draw()
-    window.flip()
-
-    # After all blocks are complete, send the stop signal
-    with open("stop_signal.txt", "w") as stop_file:
-        stop_file.write("STOP")
-    print("Stop signal sent.")
-
-    while True:
+    # --- BLOCK LOOP ---
+    for block_num in range(num_blocks):
         check_close(window)
+
+        # choose and show this block’s target
+        target_index = random.randint(0, num_squares-1)
+        target_name  = square_labels[target_index]
+        visual.TextStim(window, text=f"TARGET: {target_name}",
+                        color='yellow', height=0.1, pos=(0, 0)).draw()
+        window.flip(); core.wait(2)
+
+        # brief pause with the full grid
+        draw_grid(); window.flip(); core.wait(1)
+
+        # REPEAT FLASH‐CYCLES to get exactly `num_repeats` target‐flashes
+        for rep in range(num_repeats):
+            cycle = random.sample(range(num_squares), num_squares)
+            for idx in cycle:
+                check_close(window)
+
+                # flash on
+                squares[idx].fillColor = 'white'
+                draw_grid(); window.flip()
+                ts = local_clock()
+                # 1 = target, 2 = non‐target
+                marker = "1" if idx == target_index else "2"
+                marker_outlet.push_sample([marker], ts)
+
+                core.wait(0.1)
+
+                # flash off
+                squares[idx].fillColor = 'grey'
+                draw_grid(); window.flip()
+                core.wait(random.uniform(0.05, 0.2))
+
+        print(f"Block #{block_num+1} done — target was \"{target_name}\" "
+              f"({num_repeats} flashes)")
+
+    # --- FINISH ---
+    visual.TextStim(window, text="Finished", color='white',
+                    height=0.1, pos=(0, 0)).draw()
+    window.flip()
+    with open("stop_signal.txt", "w") as f: f.write("STOP")
+    print("Stop signal sent.")
+    while True: check_close(window)
+
 
 def check_close(window):
     if 'escape' in psychopy_event.getKeys():
-        window.close()
-        core.quit()
+        window.close(); core.quit()
 
 
 if __name__ == "__main__":

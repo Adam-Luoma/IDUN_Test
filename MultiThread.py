@@ -18,15 +18,17 @@ def run_script(script_name):
 if __name__ == "__main__":
     script1_thread = threading.Thread(target=run_script, args=("IDUN_Collect.py",))
     script2_thread = threading.Thread(target=run_script, args=("Frontend_AudP300.py",))
-    #script2_thread = threading.Thread(target=run_script, args=("psychopy_visual_p300.py",))
-    script3_thread = threading.Thread(target=run_script, args=("LSL_inlet.py",))
+    #script2_thread = threading.Thread(target=run_script, args=("Frontend_VisP300.py",))
+    #script2_thread = threading.Thread(target=run_script, args=("Frontend_ASSR.py",))
+    #script2_thread = threading.Thread(target=run_script, args=("Frontend_SSVEP.py",))
+    script3_thread = threading.Thread(target=run_script, args=("LSL_Consolodate.py",))
     #script3_thread = threading.Thread(target=run_script, args=("LSL_inlet_w_DSI.py",))
 
     script1_thread.start()
     script2_thread.start()
     # Wait for 10 seconds to allow the rest of the system to initialize
     print("Waiting for system to initialize...")
-    time.sleep(30)
+    time.sleep(15)
     print("Starting data collection...")
     script3_thread.start()
 

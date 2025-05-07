@@ -14,8 +14,8 @@ marker_outlet = StreamOutlet(marker_info, 20, 360)
 
 
 # Parameters
-num_blocks = 8
-num_trials = 10
+num_blocks = 5
+num_trials = 20
 trial_duration = 20  # seconds per trial
 frame_rate = 60.0  # Your monitor's refresh rate
 
@@ -55,7 +55,7 @@ def flicker_both(duration_sec):
             win.close()
             core.quit()
 
-# Main experiment loop
+# Main experiment loop, marker 1 = 10hz target and 2 = 12.5hz target
 while True:
     for block in range(num_blocks):
         if block % 2 == 0:
