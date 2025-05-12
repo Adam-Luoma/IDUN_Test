@@ -3,7 +3,7 @@ import numpy as np
 import mne
 from mne_lsl.stream import StreamLSL
 from mne_lsl.lsl import resolve_streams, StreamInlet
-from bci_essentials.data_tank import DataTank
+from bci_essentials.data_tank.data_tank import DataTank
 
 # ------------------------ Setup ------------------------
 
@@ -12,10 +12,14 @@ directory = 'C:/Users/adamc/IDUN_Test'
 subdir = os.path.join(directory, 'data')
 os.makedirs(subdir, exist_ok=True)
 
-idun_fif_path = os.path.join(subdir, f'eeg_data_{subj}_IDUN_raw.fif')
-dsi_fif_path = os.path.join(subdir, f'eeg_data_{subj}_DSI_raw.fif')
-marker_path = os.path.join(subdir, f'marker_data_{subj}.npy')
+idun_fif_path = os.path.join(subdir, f'eeg_data_{subj}_IDUN_raw.npy')
+dsi_fif_path = os.path.join(subdir, f'eeg_data_{subj}_DSI_raw.npy')
+marker_path = os.path.join(subdir, f'marker_data_{subj}.csv')
 
+
+def check_stop_signal():
+    """Check if the stop signal file exists."""
+    return os.path.exists("stop_signal.txt")
 # ------------------------ Stream Discovery ------------------------
 
 print("Looking for EEG and marker streams...")
@@ -53,41 +57,63 @@ marker_inlet = StreamInlet(marker_stream)
 print("Streams connected.")
 
 # ------------------------ Initialize Data Tank ------------------------
-# Initialize DataTank instance for storing EEG data in a structured manner
-idun_data_tank = DataTank(name="IDUN", data_path=subdir, n_channels=1, sample_rate=250)  # Replace with correct settings
-dsi_data_tank = DataTank(name="DSI-7", data_path=subdir, n_channels=6, sample_rate=256)  # Replace with correct settings
+# Initialize DataTank instances for storing EEG data
+idun_data_tank = DataTank() 
+dsi_data_tank = DataTank()   
 
 marker_samples, marker_timestamps = [], []
 # ------------------------ Recording Loop ------------------------
-
-print("Recording... press Ctrl+C to stop.")
+print("Recording... press Ctrl+C or create 'stop_signal.txt' to stop.")
 
 try:
     while True:
-        # IDUN
+        # Break loop if stop file is detected
+        if check_stop_signal():
+            print("Stop signal file detected. Stopping recording...")
+            break
+
+        # IDUN - Get data and append to DataTank
         chunk1, ts1 = idun.get_data()
         if chunk1.size > 0:
-            idun_data_tank.append_data(chunk1, ts1)  # Append data chunk to the DataTank
+            idun_data_tank.add_raw_eeg(chunk1, ts1)
 
-        # DSI
+        # DSI - Get data and append to DataTank
         chunk2, ts2 = dsi.get_data()
         if chunk2.size > 0:
-            dsi_data_tank.append_data(chunk2, ts2)  # Append data chunk to the DataTank
+            dsi_data_tank.add_raw_eeg(chunk2, ts2)
 
-        # Marker
+        # Marker - Get data and append to list
         sample, ts = marker_inlet.pull_sample(timeout=0.0)
         if sample is not None:
-            marker_samples.append(sample)
-            marker_timestamps.append(ts)
+        # Make sure to check for a valid value
+            if isinstance(sample, (list, np.ndarray)) and len(sample) > 0:
+                marker_value = sample[0]
+                marker_samples.append(marker_value)
+                marker_timestamps.append(ts)
 
 except KeyboardInterrupt:
-    print("Recording stopped.")
+    print("Recording stopped by user.")
 
-# Save IDUN and DSI data using DataTank's save functionality
-idun_data_tank.save_data(idun_fif_path)
-dsi_data_tank.save_data(dsi_fif_path)
+# ------------------------ Data Saving  ------------------------
+# Save IDUN EEG data and timestamps
+idun_eeg = idun_data_tank.get_raw_eeg()
+idun_timestamps = idun_data_tank._DataTank__raw_eeg_timestamps  # private attribute
 
-# Save markers
-np.save(marker_path, {"markers": marker_samples, "timestamps": marker_timestamps})
-print(f"Saved markers to {marker_path}")
-    
+idun_save_path = os.path.join(subdir, f"eeg_data_{subj}_IDUN.npy")
+np.save(idun_save_path, {"eeg": idun_eeg, "timestamps": idun_timestamps})
+print(f"Saved IDUN EEG data and timestamps to {idun_save_path}")
+
+# Save DSI EEG data and timestamps
+dsi_eeg = dsi_data_tank.get_raw_eeg()
+dsi_timestamps = dsi_data_tank._DataTank__raw_eeg_timestamps  # private attribute
+
+dsi_save_path = os.path.join(subdir, f"eeg_data_{subj}_DSI.npy")
+np.save(dsi_save_path, {"eeg": dsi_eeg, "timestamps": dsi_timestamps})
+print(f"Saved DSI EEG data and timestamps to {dsi_save_path}")
+
+with open(os.path.join(subdir, f"marker_data_{subj}.csv"), "w") as f:
+    for sample, ts in zip(marker_samples, marker_timestamps):
+        if isinstance(sample, (list, np.ndarray)) and len(sample) > 0:
+            # Extract the first element from the list/array
+            sample = sample[0]
+        f.write(f"{sample}, {ts}\n")

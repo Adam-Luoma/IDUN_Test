@@ -79,8 +79,8 @@ def start_window():
                 squares[idx].fillColor = 'white'
                 draw_grid(); window.flip()
                 ts = local_clock()
-                # 1 = target, 2 = non‐target
-                marker = "1" if idx == target_index else "2"
+                # 2 = target, 1 = non‐target
+                marker = 2 if idx == target_index else 1
                 marker_outlet.push_sample([marker], ts)
 
                 core.wait(0.1)

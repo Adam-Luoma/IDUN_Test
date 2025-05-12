@@ -15,7 +15,7 @@ marker_outlet = StreamOutlet(marker_info, 20, 360)
 
 # Parameters
 num_blocks = 5
-num_trials = 20
+num_trials = 10
 trial_duration = 20  # seconds per trial
 frame_rate = 60.0  # Your monitor's refresh rate
 

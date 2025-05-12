@@ -19,7 +19,7 @@ marker_outlet = StreamOutlet(marker_info, 20, 360)
 
 # Trial parameters
 num_blocks = 5 
-num_trials = 20
+num_trials = 10
 
 
 # Setup PsychoPy window

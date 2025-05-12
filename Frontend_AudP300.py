@@ -6,12 +6,12 @@ from psychopy import prefs
 prefs.hardware['audioLib'] = ['Speakers (Realtek(R) Audio)']
 
 # Initialize PsychoPy experiment parameters
-sound_440Hz = sound.Sound("Audio/440Hz_tone.wav")
-sound_523Hz = sound.Sound("Audio/523Hz_tone.wav")  # High note
-sound_349Hz = sound.Sound("Audio/349Hz_tone.wav")  # Low note
+sound_440Hz = sound.Sound("Audio/A4_440Hz_300ms.wav")
+sound_523Hz = sound.Sound("Audio/A5_880Hz_300ms.wav")  # High note
+sound_349Hz = sound.Sound("Audio/A3_220Hz_300ms.wav")  # Low note
 
-num_blocks = 2  # UPDATE to alter data collection length
-num_trials_per_block = 2
+num_blocks = 5  # UPDATE to alter data collection length
+num_trials_per_block = 20
 distractor_sound_count = 10
 
 marker_info = StreamInfo(name='MarkerStream',
@@ -84,7 +84,7 @@ while True:
                     marker_outlet.push_sample(marker, timestamp)
                     sound_349Hz.play()
 
-                core.wait(random.uniform(0.25, 0.5))
+                core.wait(random.uniform(0.5, 0.75))
 
                 if 'escape' in psychopy_event.getKeys():
                     win.close()
