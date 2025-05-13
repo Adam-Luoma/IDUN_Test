@@ -4,7 +4,7 @@ from psychopy import visual, core, event as psychopy_event
 
 # === PARAMETERS ===
 num_squares  = 9
-num_blocks   = 5    # number of blocks (i.e. different targets)
+num_blocks   = 4    # number of blocks (i.e. different targets)
 num_repeats  = 20   # number of target appearances per block
 
 marker_info = StreamInfo(name='MarkerStream',
@@ -69,6 +69,7 @@ def start_window():
         # brief pause with the full grid
         draw_grid(); window.flip(); core.wait(1)
 
+
         # REPEAT FLASH‐CYCLES to get exactly `num_repeats` target‐flashes
         for rep in range(num_repeats):
             cycle = random.sample(range(num_squares), num_squares)
@@ -81,7 +82,7 @@ def start_window():
                 ts = local_clock()
                 # 2 = target, 1 = non‐target
                 marker = 2 if idx == target_index else 1
-                marker_outlet.push_sample([marker], ts)
+                marker_outlet.push_sample([str(marker)], ts)
 
                 core.wait(0.1)
 

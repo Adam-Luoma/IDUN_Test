@@ -10,7 +10,7 @@ sound_440Hz = sound.Sound("Audio/A4_440Hz_300ms.wav")
 sound_523Hz = sound.Sound("Audio/A5_880Hz_300ms.wav")  # High note
 sound_349Hz = sound.Sound("Audio/A3_220Hz_300ms.wav")  # Low note
 
-num_blocks = 5  # UPDATE to alter data collection length
+num_blocks = 4  # UPDATE to alter data collection length
 num_trials_per_block = 20
 distractor_sound_count = 10
 

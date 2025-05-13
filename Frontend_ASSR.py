@@ -18,7 +18,7 @@ marker_info = StreamInfo(name='MarkerStream',
 marker_outlet = StreamOutlet(marker_info, 20, 360)
 
 # Trial parameters
-num_blocks = 5 
+num_blocks = 4 
 num_trials = 10
 
 
@@ -57,12 +57,14 @@ while True:
         fixation.draw()
         win.flip()
 
+        
+
         # Perform the trials for the block
         for trial in range(num_trials):
             print(f"Starting Trial {trial + 1} of Block {block + 1}")
 
             # Prepare a list of 5 trails
-            order = random.choices([1, 2], k=num_trials)
+            order = random.choices([1, 2], k=1)
 
             # Play sounds in sequence
             for i in order:
